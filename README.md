@@ -32,12 +32,12 @@ Esta implementación utiliza:
 ```text
 dijkstra-project/
 ├── src/
-│   ├── __init__.py          # Inicializador del paquete principal
 │   ├── grafo.py             # Definición de las clases Arista y Grafo
 │   ├── dijkstra.py          # Implementación de ejecutar_dijkstra y ResultadoDijkstra
-│   └── visualizador.py      # Módulo reservado para visualización del grafo
+│   └── visualizador.py      # Módulo reservado para visualización del grafo (entrega final)
 ├── tests/
 │   └── test_dijkstra.py     # Pruebas unitarias automatizadas con pytest
+├── .gitignore               # Archivos y carpetas ignorados por Git
 ├── main.py                  # Script principal de demostración y validación manual
 ├── pytest.ini               # Configuración de rutas para pytest
 ├── requirements.txt         # Dependencias del proyecto

@@ -1,0 +1,18 @@
+{
+  "nombre": "Red Logistica de Transporte (No Dirigido)",
+  "descripcion": "Red de carreteras de doble via (no dirigida) entre 6 centros de distribucion.",
+  "dirigido": false,
+  "origen_por_defecto": "Planta",
+  "destino_por_defecto": "Cliente",
+  "vertices": ["Planta", "Norte", "Centro", "Sur", "Puerto", "Cliente"],
+  "aristas": [
+    {"origen": "Planta", "destino": "Norte", "peso": 4.0},
+    {"origen": "Planta", "destino": "Centro", "peso": 2.0},
+    {"origen": "Centro", "destino": "Norte", "peso": 1.0},
+    {"origen": "Norte", "destino": "Puerto", "peso": 5.0},
+    {"origen": "Centro", "destino": "Sur", "peso": 3.0},
+    {"origen": "Sur", "destino": "Puerto", "peso": 2.0},
+    {"origen": "Puerto", "destino": "Cliente", "peso": 3.0},
+    {"origen": "Sur", "destino": "Cliente", "peso": 8.0}
+  ]
+}

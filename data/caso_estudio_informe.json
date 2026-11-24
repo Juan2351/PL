@@ -1,0 +1,17 @@
+{
+  "nombre": "Caso de Estudio del Informe (Dirigido)",
+  "descripcion": "Red dirigida de 5 nodos (A hasta E) utilizada en la validacion analitica del informe.",
+  "dirigido": true,
+  "origen_por_defecto": "A",
+  "destino_por_defecto": "E",
+  "vertices": ["A", "B", "C", "D", "E"],
+  "aristas": [
+    {"origen": "A", "destino": "B", "peso": 4.0},
+    {"origen": "A", "destino": "C", "peso": 2.0},
+    {"origen": "C", "destino": "B", "peso": 1.0},
+    {"origen": "B", "destino": "D", "peso": 5.0},
+    {"origen": "C", "destino": "D", "peso": 8.0},
+    {"origen": "C", "destino": "E", "peso": 10.0},
+    {"origen": "D", "destino": "E", "peso": 2.0}
+  ]
+}

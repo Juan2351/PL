@@ -1,6 +1,6 @@
 # Proyecto: Algoritmo de Dijkstra en Python
 
-Implementación modular y documentada del **Algoritmo de Dijkstra** para encontrar caminos más cortos desde un nodo origen hacia todos los demás nodos en un grafo dirigido o no dirigido con pesos no negativos.
+Implementación modular, documentada y con interfaz gráfica interactiva del **Algoritmo de Dijkstra** para encontrar caminos más cortos desde un nodo origen hacia todos los demás nodos en un grafo **dirigido o no dirigido** con pesos no negativos.
 
 ---
 
@@ -11,7 +11,7 @@ Implementación modular y documentada del **Algoritmo de Dijkstra** para encontr
 3. [Explicación de los Componentes](#explicación-de-los-componentes)
 4. [Caso de Validación Manual](#caso-de-validación-manual)
 5. [Requisitos e Instalación](#requisitos-e-instalación)
-6. [Ejecución del Proyecto y Pruebas](#ejecución-del-proyecto-y-pruebas)
+6. [Ejecución del Proyecto (Consola, Interfaz Web y Pruebas)](#ejecución-del-proyecto-consola-interfaz-web-y-pruebas)
 7. [Complejidad Algorítmica](#complejidad-algorítmica)
 
 ---
@@ -20,10 +20,12 @@ Implementación modular y documentada del **Algoritmo de Dijkstra** para encontr
 
 El algoritmo de Dijkstra resuelve el problema del **camino más corto de origen único** (*Single-Source Shortest Path - SSSP*) en grafos ponderados cuyas aristas poseen costos no negativos ($w(u, v) \ge 0$).
 
-Esta implementación utiliza:
-- **Listas de adyacencia** mediante diccionarios y `dataclasses` para representar el grafo de forma clara y eficiente en memoria.
+Esta implementación incluye:
+- **Listas de adyacencia** mediante diccionarios y `dataclasses` con soporte tanto para **grafos dirigidos** como **no dirigidos (doble vía)**.
 - **Cola de prioridad (`heapq` / Min-Heap)** para seleccionar en cada iteración el vértice no visitado con menor distancia acumulada.
 - **Reconstrucción de caminos (*backtracking*)** mediante un mapa de nodos predecesores.
+- **Carga y exportación de topologías en formato JSON** desde la carpeta `data/`.
+- **Interfaz Gráfica Interactiva (`Streamlit` + `PyVis`)**: Permite editar nodos, agregar/eliminar caminos, modificar pesos en vivo, alternar entre grafo dirigido y no dirigido, y visualizar el grafo resaltando en **color verde** los caminos seleccionados por la ruta óptima.
 
 ---
 
@@ -31,17 +33,21 @@ Esta implementación utiliza:
 
 ```text
 dijkstra-project/
+├── data/
+│   ├── caso_estudio_informe.json          # Topología dirigida del caso analítico del informe
+│   └── red_logistica_no_dirigida.json     # Topología no dirigida (doble vía) de ejemplo
 ├── src/
-│   ├── grafo.py             # Definición de las clases Arista y Grafo
-│   ├── dijkstra.py          # Implementación de ejecutar_dijkstra y ResultadoDijkstra
-│   └── visualizador.py      # Módulo reservado para visualización del grafo (entrega final)
+│   ├── grafo.py                           # Definición de Arista, Grafo y carga/exportación JSON
+│   ├── dijkstra.py                        # Implementación de ejecutar_dijkstra y ResultadoDijkstra
+│   └── visualizador.py                    # Generador del grafo interactivo con ruta coloreada (PyVis)
 ├── tests/
-│   └── test_dijkstra.py     # Pruebas unitarias automatizadas con pytest
-├── .gitignore               # Archivos y carpetas ignorados por Git
-├── main.py                  # Script principal de demostración y validación manual
-├── pytest.ini               # Configuración de rutas para pytest
-├── requirements.txt         # Dependencias del proyecto
-└── README.md                # Documentación general del proyecto
+│   └── test_dijkstra.py                   # Pruebas unitarias automatizadas con pytest
+├── .gitignore                             # Archivos y carpetas ignorados por Git
+├── app.py                                 # Interfaz gráfica interactiva (Dashboard en Streamlit)
+├── main.py                                # Script principal de validación en consola y lanzador de UI
+├── pytest.ini                             # Configuración de rutas para pytest
+├── requirements.txt                       # Dependencias del proyecto
+└── README.md                              # Documentación general del proyecto
 ```
 
 ---
@@ -50,12 +56,13 @@ dijkstra-project/
 
 ### 1. `src/grafo.py`
 Modela la estructura de la red:
-- **`Arista`**: Clase de datos (`@dataclass`) que almacena el nodo `destino` (`str`) y el `peso` (`float`) de una conexión dirigida.
+- **`Arista`**: Clase de datos (`@dataclass`) que almacena el nodo `destino` (`str`) y el `peso` (`float`) de una conexión.
 - **`Grafo`**:
   - `adyacencia`: Diccionario `Dict[str, List[Arista]]` que mapea cada vértice con su lista de aristas salientes.
+  - `dirigido`: Atributo booleano (`True` para aristas de un solo sentido, `False` para aristas bidireccionales).
   - `agregar_vertice(vertice)`: Registra un nodo en el grafo si aún no existe.
-  - `agregar_arista(origen, destino, peso, bidireccional=False)`: Crea la conexión entre dos nodos validando que el peso no sea negativo (`ValueError` si `peso < 0`).
-  - `vertices`: Propiedad que retorna la lista de todos los nodos registrados.
+  - `agregar_arista(origen, destino, peso, bidireccional=False)`: Crea o actualiza la conexión entre dos nodos validando que el peso no sea negativo (`ValueError` si `peso < 0`).
+  - `cargar_desde_json(ruta_archivo)` y `desde_diccionario(datos)`: Permiten cargar topologías dinámicamente desde archivos `.json`.
 
 ### 2. `src/dijkstra.py`
 Contiene el motor de búsqueda del camino óptimo:
@@ -67,24 +74,26 @@ Contiene el motor de búsqueda del camino óptimo:
   - Inicializa todas las distancias en $\infty$ excepto la del nodo `origen` ($0.0$).
   - Utiliza un *Min-Heap* (`heapq`) con tuplas `(distancia_acumulada, nodo)` y un conjunto `visitados` para expandir los nodos de forma voraz (*greedy*) y relajar las aristas adyacentes.
 
-### 3. `main.py`
-Script ejecutable que construye el grafo de validación, ejecuta el algoritmo desde el nodo `A` hasta el nodo `E` e imprime en consola:
-1. Las distancias mínimas desde `A` hacia todos los nodos.
-2. El diccionario de predecesores.
-3. La ruta óptima paso a paso (`A -> C -> B -> D -> E`).
-4. El costo total acumulado (`10`).
+### 3. `src/visualizador.py` y `app.py` (Interfaz Gráfica UI/UX)
+- **`src/visualizador.py`**: Utiliza `PyVis` para dibujar el grafo interactivo, coloreando en **verde esmeralda** el nodo origen, en **naranja** el nodo destino, en **azul** los nodos intermedios y en **verde grueso** las aristas seleccionadas por el camino óptimo.
+- **`app.py`**: Divide la interfaz web en dos columnas:
+  - **Panel Izquierdo (Lógica y Configuración):** Permite alternar entre *Dirigido* y *No Dirigido*, cargar plantillas JSON, agregar nuevos caminos, editar pesos existentes en tiempo real, eliminar aristas o agregar nodos aislados.
+  - **Panel Derecho (Salida Visual y Analítica):** Permite elegir el nodo origen y destino, muestra el grafo interactivo con los caminos óptimos coloreados, el costo total mínimo y la tabla completa de distancias y predecesores.
 
 ### 4. `tests/test_dijkstra.py`
-Pruebas unitarias con `pytest` que verifican tres escenarios clave:
-- **`test_caso_base_convergente`**: Verifica que el algoritmo elija caminos intermedios más económicos (`A -> C -> B -> D -> E` con costo `10`) frente a caminos directos más costosos.
-- **`test_rechazo_pesos_negativos`**: Comprueba que se lance `ValueError` al intentar añadir una arista con peso negativo.
-- **`test_nodo_desconexo`**: Verifica que un nodo aislado (`Z`) tenga costo `inf` y camino vacío `[]`.
+Suite de 6 pruebas unitarias con `pytest`:
+- **`test_caso_base_convergente`**: Verifica el camino óptimo (`A -> C -> B -> D -> E`, costo `10`) en el grafo dirigido del informe.
+- **`test_grafo_no_dirigido_bidireccional`**: Comprueba que en grafos no dirigidos las aristas puedan recorrerse en ambos sentidos.
+- **`test_rechazo_pesos_negativos`**: Verifica que se lance `ValueError` ante pesos negativos.
+- **`test_nodo_desconexo`**: Comprueba que un nodo aislado (`Z`) tenga costo `inf` y camino vacío `[]`.
+- **`test_carga_desde_json`**: Valida la carga dinámica desde `data/caso_estudio_informe.json`.
+- **`test_visualizador_resalta_aristas_ruta_optima`**: Verifica la identificación y coloreado de los tramos óptimos.
 
 ---
 
 ## Caso de Validación Manual
 
-El grafo configurado en `main.py` cuenta con los siguientes nodos y aristas dirigidas:
+El grafo por defecto configurado en `main.py` y en `data/caso_estudio_informe.json` cuenta con las siguientes aristas dirigidas:
 
 | Origen | Destino | Peso |
 | :---: | :---: | :---: |
@@ -97,12 +106,7 @@ El grafo configurado en `main.py` cuenta con los siguientes nodos y aristas diri
 | D | E | 2 |
 
 ### Resultado esperado desde `A` hacia `E`:
-- **Distancias mínimas desde `A`**:
-  - `A -> A`: `0.0`
-  - `A -> C`: `2.0`
-  - `A -> B`: `3.0` (vía `C`)
-  - `A -> D`: `8.0` (vía `B`)
-  - `A -> E`: `10.0` (vía `D`)
+- **Distancias mínimas desde `A`**: `{'A': 0.0, 'B': 3.0, 'C': 2.0, 'D': 8.0, 'E': 10.0}`
 - **Predecesores**: `{'A': None, 'B': 'C', 'C': 'A', 'D': 'B', 'E': 'D'}`
 - **Ruta óptima**: `A -> C -> B -> D -> E`
 - **Costo total**: `10`
@@ -112,9 +116,8 @@ El grafo configurado en `main.py` cuenta con los siguientes nodos y aristas diri
 ## Requisitos e Instalación
 
 1. Asegúrate de tener **Python 3.10+** instalado.
-2. (Opcional) Crea y activa un entorno virtual:
+2. Activa tu entorno virtual:
    ```powershell
-   python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    ```
 3. Instala las dependencias necesarias:
@@ -124,40 +127,20 @@ El grafo configurado en `main.py` cuenta con los siguientes nodos y aristas diri
 
 ---
 
-## Ejecución del Proyecto y Pruebas
+## Ejecución del Proyecto (Consola, Interfaz Web y Pruebas)
 
-### Ejecutar la validación manual en consola
+### 1. Abrir la Interfaz Gráfica Interactiva (Recomendado para la entrega final)
+```powershell
+streamlit run app.py
+```
+*(O también puedes ejecutar `python main.py --ui`)*.
+
+### 2. Ejecutar la validación rápida en consola
 ```powershell
 python main.py
 ```
 
-Salida en consola:
-```text
-=======================================================
-  VALIDACIÓN MANUAL - ALGORITMO DE DIJKSTRA (FASE 2)
-=======================================================
-Nodo origen  : A
-Nodo destino : E
-
-1. Distancias mínimas desde A:
-   - A -> A: 0.0
-   - A -> B: 3.0
-   - A -> C: 2.0
-   - A -> D: 8.0
-   - A -> E: 10.0
-
-2. Diccionario de predecesores:
-   {'A': None, 'B': 'C', 'C': 'A', 'D': 'B', 'E': 'D'}
-
-3. Ruta óptima:
-   A -> C -> B -> D -> E
-
-4. Costo total:
-   10
-=======================================================
-```
-
-### Ejecutar las pruebas unitarias con `pytest`
+### 3. Ejecutar las pruebas unitarias con `pytest`
 ```powershell
 pytest -v
 ```

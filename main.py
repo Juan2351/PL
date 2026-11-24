@@ -1,10 +1,14 @@
 """
-Punto de entrada principal del proyecto (Script de demostración y validación manual).
+Punto de entrada principal del proyecto.
 
-Construye un grafo dirigido de prueba, ejecuta el algoritmo de Dijkstra desde
-el nodo 'A' hasta el nodo 'E', y muestra detalladamente en consola las distancias
-mínimas hacia cada vértice, el árbol de predecesores, la ruta óptima y su costo total.
+Permite dos modos de uso muy sencillos:
+1. `python main.py`       -> Ejecuta en consola la validación manual del caso de estudio del informe.
+2. `python main.py --ui`  -> Abre automáticamente la interfaz gráfica interactiva en el navegador (Streamlit).
 """
+
+import subprocess
+import sys
+from pathlib import Path
 
 # Importamos la estructura de datos Grafo para construir la red de nodos y aristas
 from src.grafo import Grafo
@@ -12,12 +16,12 @@ from src.grafo import Grafo
 from src.dijkstra import ejecutar_dijkstra
 
 
-def main() -> None:
+def ejecutar_validacion_consola() -> None:
     """
-    Función principal que configura el caso de estudio, ejecuta Dijkstra e imprime el reporte.
+    Configura el caso de estudio del informe, ejecuta Dijkstra e imprime el reporte detallado en consola.
     """
-    # Instanciamos un nuevo objeto Grafo vacío
-    grafo = Grafo()
+    # Instanciamos un nuevo objeto Grafo dirigido
+    grafo = Grafo(dirigido=True)
 
     # Definimos la lista de aristas dirigidas del caso de validación manual.
     # Cada tupla tiene el formato: (nodo_origen, nodo_destino, peso_o_costo)
@@ -47,9 +51,9 @@ def main() -> None:
     costo_total = resultado.costo_hacia(destino)
 
     # Impresión formateada en consola de los resultados obtenidos
-    print("=" * 55)
-    print("  VALIDACIÓN MANUAL - ALGORITMO DE DIJKSTRA (FASE 2)")
-    print("=" * 55)
+    print("=" * 60)
+    print("  VALIDACIÓN EN CONSOLA - ALGORITMO DE DIJKSTRA")
+    print("=" * 60)
     print(f"Nodo origen  : {origen}")
     print(f"Nodo destino : {destino}\n")
 
@@ -69,7 +73,28 @@ def main() -> None:
     # 4. Mostramos el costo total de la ruta formateado de manera limpia (:g elimina decimales .0 innecesarios)
     print("\n4. Costo total:")
     print(f"   {costo_total:g}")
-    print("=" * 55)
+    print("=" * 60)
+    print("Tip: Para abrir la interfaz gráfica interactiva ejecuta:")
+    print("     streamlit run app.py   (o bien: python main.py --ui)")
+    print("=" * 60)
+
+
+def lanzar_interfaz_grafica() -> None:
+    """
+    Lanza el servidor de Streamlit con el archivo `app.py` para abrir la interfaz interactiva en el navegador.
+    """
+    ruta_app = Path(__file__).resolve().parent / "app.py"
+    subprocess.run([sys.executable, "-m", "streamlit", "run", str(ruta_app)], check=True)
+
+
+def main() -> None:
+    """
+    Punto de entrada principal: si se pasa `--ui`, lanza la interfaz web; de lo contrario, ejecuta la validación en consola.
+    """
+    if "--ui" in sys.argv:
+        lanzar_interfaz_grafica()
+    else:
+        ejecutar_validacion_consola()
 
 
 # Punto de entrada estándar en Python: solo ejecuta main() si el archivo es invocado directamente
